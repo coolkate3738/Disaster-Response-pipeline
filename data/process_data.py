@@ -1,16 +1,72 @@
+import numpy as np
+import pandas as pd
+from sqlalchemy import create_engine
+import os
 import sys
 
-
 def load_data(messages_filepath, categories_filepath):
-    pass
+    """
+    Load Messages and Categories data and merge them together on ID
+    
+    Arguments:
+        messages_filepath - Path to messages data csv
+        categories_filepath - Path to categories data csv
+    Output:
+        df - Messages and categories data merged together
+    """
+    messages = pd.read_csv(messages_filepath, encoding='latin-1')
+    categories = pd.read_csv(categories_filepath, encoding='latin-1')
+    df = pd.merge(messages,categories,on='id')
+    return df
 
 
 def clean_data(df):
-    pass
+    """
+    Cleaning the combined data
+    
+    Arguments:
+        df - dataset with categories and respective messages
+    Outputs:
+        df - dataset after pre-processing/cleaning with categories levels cleaned up
+    """
+    # create a dataframe of the 36 individual category columns
+    categories= df['categories'].str.split(';',expand=True)
+    # select the first row of the categories dataframe
+    row = categories.iloc[0]
+
+    # use this row to extract a list of new column names for categories.
+    # one way is to apply a lambda function that takes everything 
+    # up to the second to last character of each string with slicing
+    category_colnames = row.apply(lambda x: x[:-2])
+    # rename the columns of `categories`
+    categories.columns = category_colnames
+    for column in categories:
+    # set each value to be the last character of the string
+        categories[column] = categories[column].apply(lambda x: x[-1])
+    
+        # convert column from string to numeric
+        categories[column] = pd.to_numeric(categories[column])
+        # drop the original categories column from `df`
+    df=df.drop(labels='categories',axis=1)
+    # concatenate the original dataframe with the new `categories` dataframe
+    df = pd.concat([df,categories],axis=1)
+    #remove duplicates
+    df=df.drop_duplicates()
+    return df
 
 
 def save_data(df, database_filename):
-    pass  
+    """
+    Save Data to SQLite Database Function
+    
+    Arguments:
+        df -cleaned up dataset
+        database_filename -path to database 
+    """
+    path = "DisasterResponse.db"
+    engine = create_engine('sqlite:///' + database_filename)
+    table = os.path.basename(path).replace(".db","") + "_messages_clean"
+    df.to_sql(table, engine, index=False, if_exists='replace')
 
 
 def main():
