@@ -63,9 +63,9 @@ def save_data(df, database_filename):
         df -cleaned up dataset
         database_filename -path to database 
     """
-    path = "DisasterResponse.db"
+    
     engine = create_engine('sqlite:///' + database_filename)
-    table = os.path.basename(path).replace(".db","") + "_messages_clean"
+    table = database_filename.replace(".db","") + "_messages_clean"
     df.to_sql(table, engine, index=False, if_exists='replace')
 
 
