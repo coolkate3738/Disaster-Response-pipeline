@@ -3,7 +3,11 @@ import plotly
 import pandas as pd
 
 from nltk.stem import WordNetLemmatizer
-from nltk.tokenize import word_tokenize
+from nltk.tokenize import word_tokenize, sent_tokenize
+from nltk import pos_tag, word_tokenize
+import nltk
+
+from sklearn.base import BaseEstimator, TransformerMixin
 
 from flask import Flask
 from flask import render_template, request, jsonify
@@ -26,11 +30,11 @@ def tokenize(text):
     return clean_tokens
 
 # load data
-engine = create_engine('sqlite:///../data/YourDatabaseName.db')
-df = pd.read_sql_table('YourTableName', engine)
+engine = create_engine('sqlite:///../data/DisasterResponse.db')
+df = pd.read_sql_table('_messages_clean', engine)
 
 # load model
-model = joblib.load("../models/your_model_name.pkl")
+model = joblib.load("../models/classifier.pkl")
 
 
 # index webpage displays cool visuals and receives user input text for model
@@ -42,7 +46,8 @@ def index():
     # TODO: Below is an example - modify to extract data for your own visuals
     genre_counts = df.groupby('genre').count()['message']
     genre_names = list(genre_counts.index)
-    
+    related_split = df.groupby('related').count()['message']
+    related_names = list(related_split.index)
     # create visuals
     # TODO: Below is an example - modify to create your own visuals
     graphs = [
@@ -63,7 +68,28 @@ def index():
                     'title': "Genre"
                 }
             }
+        },
+            # - related split graph    
+        {
+            'data': [
+                Bar(
+                    x=related_names,
+                    y=related_split
+                )
+            ],
+
+            'layout': {
+                'title': 'Distribution of related to distaster messages categories',
+                'yaxis': {
+                    'title': "Count"
+                },
+                'xaxis': {
+                    'title': "Related",
+                    'tickangle': 35
+                }
+            }
         }
+    ]
     ]
     
     # encode plotly graphs in JSON

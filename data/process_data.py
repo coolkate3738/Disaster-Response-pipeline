@@ -32,7 +32,7 @@ def clean_data(df):
     # create a dataframe of the 36 individual category columns
     categories= df['categories'].str.split(';',expand=True)
     # select the first row of the categories dataframe
-    row = categories.iloc[0]
+    row =  categories.iloc[0,:]
 
     # use this row to extract a list of new column names for categories.
     # one way is to apply a lambda function that takes everything 
@@ -43,15 +43,16 @@ def clean_data(df):
     for column in categories:
     # set each value to be the last character of the string
         categories[column] = categories[column].apply(lambda x: x[-1])
+        categories[column] = categories[column].astype(np.int)
     
-        # convert column from string to numeric
-        categories[column] = pd.to_numeric(categories[column])
+        
         # drop the original categories column from `df`
     df=df.drop(labels='categories',axis=1)
     # concatenate the original dataframe with the new `categories` dataframe
     df = pd.concat([df,categories],axis=1)
     #remove duplicates
     df=df.drop_duplicates()
+    df = df[df['related'].notna()]
     return df
 
 
